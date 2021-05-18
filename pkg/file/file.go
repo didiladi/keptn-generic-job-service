@@ -72,6 +72,8 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 			log.Printf("Could not write to file %s", fileName)
 			return err
 		}
+
+		log.Printf("Successfully moved file %s to %s", fileName, fullFilePath)
 	}
 
 	return nil

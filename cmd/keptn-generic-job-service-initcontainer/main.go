@@ -13,14 +13,12 @@ import (
 )
 
 type envConfig struct {
-	// Port on which to listen for cloudevents
-	Port int `envconfig:"RCV_PORT" default:"8080"`
-	// Path to which cloudevents are sent
-	Path string `envconfig:"RCV_PATH" default:"/"`
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
-	ConfigurationServiceUrl string `envconfig:"CONFIGURATION_SERVICE" default:""`
+	ConfigurationServiceUrl string `envconfig:"CONFIGURATION_SERVICE" required:"true"`
+	// The token of the keptn API
+	KeptnApiToken string `envconfig:"KEPTN_API_TOKEN" required:"true"`
 	// The keptn project contained in the initial cloud event
 	Project string `envconfig:"KEPTN_PROJECT" required:"true"`
 	// The keptn stage contained in the initial cloud event
@@ -47,7 +45,7 @@ func main() {
 	var resourceHandler *api.ResourceHandler
 	if env.ApiToken != "" {
 		configurationServiceUrl, _ := url.Parse(env.ConfigurationServiceUrl)
-		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceUrl.String(), env.ApiToken, "x-token", nil, configurationServiceUrl.Scheme)
+		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceUrl.String(), env.KeptnApiToken, "x-token", nil, configurationServiceUrl.Scheme)
 	} else {
 		resourceHandler = api.NewResourceHandler(env.ConfigurationServiceUrl)
 	}

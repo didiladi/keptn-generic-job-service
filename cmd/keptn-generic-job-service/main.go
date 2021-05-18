@@ -26,6 +26,10 @@ type envConfig struct {
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
 	ConfigurationServiceUrl string `envconfig:"CONFIGURATION_SERVICE" default:""`
+	// The endpoint of the keptn configuration service API
+	KeptnConfigurationServiceApiEndpoint string `envconfig:"KEPTN_CONFIGURATION_SERVICE_API_ENDPOINT" required:"true"`
+	// The endpoint of the keptn configuration service API
+	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -69,9 +73,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 	}
 
 	var eventDataAsInterface interface{}
-	//err = event.DataAs(eventDataAsInterface)
 	err = json.Unmarshal(event.Data(), &eventDataAsInterface)
-	//err = parseKeptnCloudEventPayload(event, eventDataAsInterface)
 	if err != nil {
 		log.Printf("failed to convert incoming cloudevent: %v", err)
 	}
@@ -107,11 +109,6 @@ func _main(args []string, env envConfig) int {
 	if env.Env == "local" {
 		log.Println("env=local: Running with local filesystem to fetch resources")
 		keptnOptions.UseLocalFileSystem = true
-	}
-
-	_, available := os.LookupEnv("JOB_NAMESPACE")
-	if !available {
-		log.Fatalf("JOB_NAMESPACE was not available. Please set it as env var")
 	}
 
 	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceUrl

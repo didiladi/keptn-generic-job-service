@@ -29,45 +29,10 @@ func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data i
 		return err
 	}
 
-	/* For testing:
-
-		configuration, err := config.NewConfig(resource)
-		const complexConfig = `
-	actions:
-	  - name: "Run locust"
-	    event: "sh.keptn.event.test.triggered"
-	    jsonpath:
-	      property: "$.test.teststrategy"
-	      match: "locust"
-	    tasks:
-	      - name: "Run locust smoke tests"
-	        files:
-	          - locust/basic.py
-	          - locust/import.py
-	        image: "locustio/locust"
-	        cmd: "locust -f /keptn/locust/locustfile.py"
-
-	  - name: "Run bash"
-	    event: "sh.keptn.event.action.triggered"
-	    jsonpath:
-	      property: "$.action.action"
-	      match: "hello"
-	    tasks:
-	      - name: "Run static world"
-	        image: "bash"
-	        cmd: "echo static"
-	      - name: "Run hello world"
-	        files:
-	          - hello/hello-world.txt
-	        image: "bash"
-	        cmd: "cat /keptn/hello/heppo-world.txt | echo"
-	`
-		configuration, err := config.NewConfig([]byte(complexConfig))
-	*/
-
 	configuration, err := config.NewConfig(resource)
 	if err != nil {
 		log.Printf("Could not parse config: %s", err)
+		log.Printf("The config was: %s", string(resource))
 		return err
 	}
 
@@ -79,12 +44,12 @@ func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data i
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", incomingEvent.Context.GetID(), incomingEvent.Type(), action.Name)
 
-	startK8sJob(myKeptn, eventData, &configuration.Configuration, action, serviceName)
+	startK8sJob(myKeptn, eventData, action, serviceName)
 
 	return nil
 }
 
-func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configuration *config.Configuration, action *config.Action, serviceName string) {
+func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *config.Action, serviceName string) {
 
 	event, err := myKeptn.SendTaskStartedEvent(eventData, serviceName)
 	if err != nil {
@@ -93,6 +58,9 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configura
 	}
 
 	namespace, _ := os.LookupEnv("JOB_NAMESPACE")
+	configServiceApiUrl, _ := os.LookupEnv("KEPTN_CONFIGURATION_SERVICE_API_ENDPOINT")
+	configServiceToken, _ := os.LookupEnv("KEPTN_API_TOKEN")
+	logs := ""
 
 	for index, task := range action.Tasks {
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
@@ -102,15 +70,11 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configura
 		clientset, err := k8s.ConnectToCluster(namespace)
 		if err != nil {
 			log.Printf("Error while connecting to cluster: %s\n", err.Error())
-			sendTaskFailedEvent(myKeptn, jobName, serviceName, err)
+			sendTaskFailedEvent(myKeptn, jobName, serviceName, err, "")
 			return
 		}
 
-		if configuration.ConfigurationService.Url == "" {
-			configuration.ConfigurationService.Url = myKeptn.ResourceHandler.BaseURL
-		}
-
-		err = k8s.CreateK8sJob(clientset, namespace, jobName, configuration, action, task, eventData)
+		jobErr := k8s.CreateK8sJob(clientset, namespace, jobName, action, task, eventData, configServiceApiUrl, configServiceToken)
 		defer func() {
 			err = k8s.DeleteK8sJob(clientset, namespace, jobName)
 			if err != nil {
@@ -118,12 +82,14 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configura
 			}
 		}()
 
-		// TODO get the logs of the job
-		// TODO is there a way to display the logs in the keptn bridge?
-
+		logs, err = k8s.GetLogsOfPod(clientset, namespace, jobName)
 		if err != nil {
+			log.Printf("Error while retrieving logs: %s\n", err.Error())
+		}
+
+		if jobErr != nil {
 			log.Printf("Error while creating job: %s\n", err.Error())
-			sendTaskFailedEvent(myKeptn, jobName, serviceName, err)
+			sendTaskFailedEvent(myKeptn, jobName, serviceName, err, logs)
 			return
 		}
 	}
@@ -133,16 +99,16 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configura
 	myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
-		Message: fmt.Sprintf("Job %s finished successfully!", "keptn-generic-job-"+event),
+		Message: fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s", "keptn-generic-job-"+event, logs),
 	}, serviceName)
 }
 
-func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error) {
+func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error, logs string) {
 
 	_, err = myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusErrored,
 		Result:  keptnv2.ResultFailed,
-		Message: fmt.Sprintf("Job %s failed: %s", jobName, err.Error()),
+		Message: fmt.Sprintf("Job %s failed: %s\n\nLogs: \n%s", jobName, err.Error(), logs),
 	}, serviceName)
 
 	if err != nil {
