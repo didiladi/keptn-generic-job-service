@@ -6,10 +6,12 @@ import (
 	"github.com/PaesslerAG/jsonpath"
 )
 
+// Config contains the configuration of the generic job service (gerneric-job/config.yaml)
 type Config struct {
 	Actions []Action `yaml:"actions"`
 }
 
+// Action contains a action within the config which needs to be triggered
 type Action struct {
 	Name     string   `yaml:"name"`
 	Event    string   `yaml:"event"`
@@ -22,6 +24,7 @@ type JSONPath struct {
 	Match    string `yaml:"match"`
 }
 
+// Task this is the actual task which can be triggered within an Action
 type Task struct {
 	Name  string   `yaml:"name"`
 	Files []string `yaml:"files"`
@@ -29,6 +32,7 @@ type Task struct {
 	Cmd   string   `yaml:"cmd"`
 }
 
+// NewConfig creates a new configuration from the provided config file content
 func NewConfig(yamlContent []byte) (*Config, error) {
 
 	config := Config{}
@@ -37,6 +41,7 @@ func NewConfig(yamlContent []byte) (*Config, error) {
 	return &config, err
 }
 
+// IsEventMatch indicated whether a given event matches the config
 func (c *Config) IsEventMatch(event string, jsonEventData interface{}) (bool, *Action) {
 
 	for _, action := range c.Actions {
@@ -57,6 +62,7 @@ func (c *Config) IsEventMatch(event string, jsonEventData interface{}) (bool, *A
 	return false, nil
 }
 
+// FindActionByName searches for a given Action by a provided name within the config
 func (c *Config) FindActionByName(actionName string) (bool, *Action) {
 
 	for _, action := range c.Actions {
@@ -67,6 +73,7 @@ func (c *Config) FindActionByName(actionName string) (bool, *Action) {
 	return false, nil
 }
 
+// FindTaskByName searches for a given Task by a provided name within the config
 func (a *Action) FindTaskByName(taskName string) (bool, *Task) {
 
 	for _, task := range a.Tasks {

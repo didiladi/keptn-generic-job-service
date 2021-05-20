@@ -16,7 +16,6 @@ require (
 	github.com/go-openapi/validate v0.20.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.5.0
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-github/v29 v29.0.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -37,11 +36,9 @@ require (
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/build v0.0.0-20210518220400-d0819edf598a // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	google.golang.org/api v0.47.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210518161634-ec7691c0a37d // indirect
 	google.golang.org/grpc v1.38.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
