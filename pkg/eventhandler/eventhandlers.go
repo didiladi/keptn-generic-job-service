@@ -17,6 +17,7 @@ import (
 * See https://github.com/keptn/spec/blob/0.8.0-alpha/cloudevents.md for details on the payload
 **/
 
+// EventHandler contains all information needed to process an event
 type EventHandler struct {
 	Keptn                                        *keptnv2.Keptn
 	Event                                        cloudevents.Event
