@@ -3,9 +3,9 @@ package eventhandler
 import (
 	"didiladi/keptn-generic-job-service/pkg/config"
 	"didiladi/keptn-generic-job-service/pkg/k8s"
+	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
@@ -17,13 +17,30 @@ import (
 * See https://github.com/keptn/spec/blob/0.8.0-alpha/cloudevents.md for details on the payload
 **/
 
+type EventHandler struct {
+	Keptn                                        *keptnv2.Keptn
+	Event                                        cloudevents.Event
+	EventData                                    *keptnv2.EventData
+	ServiceName                                  string
+	JobNamespace                                 string
+	InitContainerConfigurationServiceAPIEndpoint string
+	KeptnAPIToken                                string
+}
+
 // HandleEvent handles all events in a generic manner
-func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data interface{}, eventData *keptnv2.EventData, serviceName string) error {
+func (eh *EventHandler) HandleEvent() error {
 
-	log.Printf("Attempting to handle event %s of type %s ...", incomingEvent.Context.GetID(), incomingEvent.Type())
-	log.Printf("CloudEvent %T: %v", data, data)
+	var eventDataAsInterface interface{}
+	err := json.Unmarshal(eh.Event.Data(), &eventDataAsInterface)
+	if err != nil {
+		log.Printf("failed to convert incoming cloudevent: %v", err)
+		return err
+	}
 
-	resource, err := myKeptn.GetKeptnResource("generic-job/config.yaml")
+	log.Printf("Attempting to handle event %s of type %s ...", eh.Event.Context.GetID(), eh.Event.Type())
+	log.Printf("CloudEvent %T: %v", eventDataAsInterface, eventDataAsInterface)
+
+	resource, err := eh.Keptn.GetKeptnResource("generic-job/config.yaml")
 	if err != nil {
 		log.Printf("Could not find config for generic Job service: %s", err.Error())
 		return err
@@ -36,30 +53,27 @@ func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data i
 		return err
 	}
 
-	match, action := configuration.IsEventMatch(incomingEvent.Type(), data)
+	match, action := configuration.IsEventMatch(eh.Event.Type(), eventDataAsInterface)
 	if !match {
-		log.Printf("No match found for event %s of type %s. Skipping...", incomingEvent.Context.GetID(), incomingEvent.Type())
+		log.Printf("No match found for event %s of type %s. Skipping...", eh.Event.Context.GetID(), eh.Event.Type())
 		return nil
 	}
 
-	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", incomingEvent.Context.GetID(), incomingEvent.Type(), action.Name)
+	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	startK8sJob(myKeptn, eventData, action, serviceName)
+	eh.startK8sJob(action)
 
 	return nil
 }
 
-func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *config.Action, serviceName string) {
+func (eh *EventHandler) startK8sJob(action *config.Action) {
 
-	event, err := myKeptn.SendTaskStartedEvent(eventData, serviceName)
+	event, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
 	if err != nil {
 		log.Printf("Error while sending started event: %s\n", err.Error())
 		return
 	}
 
-	namespace, _ := os.LookupEnv("JOB_NAMESPACE")
-	configServiceApiUrl, _ := os.LookupEnv("KEPTN_CONFIGURATION_SERVICE_API_ENDPOINT")
-	configServiceToken, _ := os.LookupEnv("KEPTN_API_TOKEN")
 	logs := ""
 
 	for index, task := range action.Tasks {
@@ -67,40 +81,40 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 
 		jobName := "keptn-generic-job-" + event + "-" + strconv.Itoa(index+1)
 
-		clientset, err := k8s.ConnectToCluster(namespace)
+		clientset, err := k8s.ConnectToCluster(eh.JobNamespace)
 		if err != nil {
 			log.Printf("Error while connecting to cluster: %s\n", err.Error())
-			sendTaskFailedEvent(myKeptn, jobName, serviceName, err, "")
+			sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, "")
 			return
 		}
 
-		jobErr := k8s.CreateK8sJob(clientset, namespace, jobName, action, task, eventData, configServiceApiUrl, configServiceToken)
+		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken)
 		defer func() {
-			err = k8s.DeleteK8sJob(clientset, namespace, jobName)
+			err = k8s.DeleteK8sJob(clientset, eh.JobNamespace, jobName)
 			if err != nil {
 				log.Printf("Error while deleting job: %s\n", err.Error())
 			}
 		}()
 
-		logs, err = k8s.GetLogsOfPod(clientset, namespace, jobName)
+		logs, err = k8s.GetLogsOfPod(clientset, eh.JobNamespace, jobName)
 		if err != nil {
 			log.Printf("Error while retrieving logs: %s\n", err.Error())
 		}
 
 		if jobErr != nil {
 			log.Printf("Error while creating job: %s\n", err.Error())
-			sendTaskFailedEvent(myKeptn, jobName, serviceName, err, logs)
+			sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, logs)
 			return
 		}
 	}
 
-	log.Printf("Successfully finished processing of event: %s\n", myKeptn.CloudEvent.ID())
+	log.Printf("Successfully finished processing of event: %s\n", eh.Keptn.CloudEvent.ID())
 
-	myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
+	eh.Keptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
 		Message: fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s", "keptn-generic-job-"+event, logs),
-	}, serviceName)
+	}, eh.ServiceName)
 }
 
 func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error, logs string) {

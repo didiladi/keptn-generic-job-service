@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// GetLogsOfPod returns the k8s logs of a job in a namespace
 func GetLogsOfPod(clientset *kubernetes.Clientset, namespace string, jobName string) (string, error) {
 
 	// TODO include the logs of the initcontainer

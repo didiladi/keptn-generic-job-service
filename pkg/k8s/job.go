@@ -16,7 +16,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceUrl string, configurationServiceToken string) error {
+// CreateK8sJob creates a k8s job with the keptn-generic-job-service-initcontainer and the job image of the task and waits until the job finishes
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string) error {
 
 	var backOffLimit int32 = 0
 
@@ -58,7 +59,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
-							Image:           "didiladi/keptn-generic-job-service-initcontainer",
+							Image:           "yeahservice/keptn-generic-job-service-initcontainer",
 							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
@@ -68,8 +69,8 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 							},
 							Env: []v1.EnvVar{
 								{
-									Name: "CONFIGURATION_SERVICE",
-									Value: configurationServiceUrl,
+									Name:  "CONFIGURATION_SERVICE",
+									Value: configurationServiceURL,
 								},
 								{
 									Name: "KEPTN_API_TOKEN",
@@ -184,6 +185,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 
 }
 
+// DeleteK8sJob delete a k8s job in the given namespace
 func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
 
 	jobs := clientset.BatchV1().Jobs(namespace)

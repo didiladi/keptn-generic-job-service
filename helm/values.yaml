@@ -26,7 +26,7 @@ remoteControlPlane:
 localControlPlane:
   configurationServiceApi:
     protocol: "http"                         # Used Protocol (http, https)
-    namespace: "keptn"                       # Namespace the keptn confiruration service is in
+    namespace: "keptn"                       # Namespace the keptn configuration service is in
     service: "configuration-service"         # The name of the k8s service of the configuration-service
     port: "8080"                             # The port which is exposed by the k8s service of the configuration-service
     token: ""                                # Keptn API Token
