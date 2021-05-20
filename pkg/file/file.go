@@ -1,8 +1,8 @@
 package file
 
 import (
-	"didiladi/keptn-generic-job-service/pkg/config"
-	"didiladi/keptn-generic-job-service/pkg/keptn"
+	"didiladi/job-executor-service/pkg/config"
+	"didiladi/job-executor-service/pkg/keptn"
 	"fmt"
 	"log"
 	"net/url"
@@ -17,7 +17,7 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 	// https://github.com/keptn/keptn/issues/2707
 	resource, err := configService.GetKeptnResource(url.QueryEscape("generic-job/config.yaml"))
 	if err != nil {
-		log.Printf("Could not find config for generic Job service")
+		log.Printf("Could not find config for job-executor-service")
 		return err
 	}
 
