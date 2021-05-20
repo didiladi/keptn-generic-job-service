@@ -51,9 +51,9 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
 					SecurityContext: &v1.PodSecurityContext{
-						RunAsUser: convert(1000),
-						RunAsGroup: convert(3000),
-						FSGroup: convert(2000),
+						RunAsUser:    convert(1000),
+						RunAsGroup:   convert(3000),
+						FSGroup:      convert(2000),
 						RunAsNonRoot: &runAsNonRoot,
 					},
 					InitContainers: []v1.Container{
@@ -73,11 +73,11 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 									Value: configurationServiceURL,
 								},
 								{
-									Name: "KEPTN_API_TOKEN",
+									Name:  "KEPTN_API_TOKEN",
 									Value: configurationServiceToken,
 								},
 								{
-									Name: "KEPTN_PROJECT",
+									Name:  "KEPTN_PROJECT",
 									Value: eventData.Project,
 								},
 								{
@@ -191,4 +191,3 @@ func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 	jobs := clientset.BatchV1().Jobs(namespace)
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
-

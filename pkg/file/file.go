@@ -11,7 +11,8 @@ import (
 	"github.com/spf13/afero"
 )
 
-func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.KeptnConfigService) error {
+// MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
+func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
 	// https://github.com/keptn/keptn/issues/2707
 	resource, err := configService.GetKeptnResource(url.QueryEscape("generic-job/config.yaml"))

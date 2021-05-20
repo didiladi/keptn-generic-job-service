@@ -56,7 +56,7 @@ func main() {
 		useLocalFileSystem = true
 	}
 
-	configService := keptn.NewKeptnConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, resourceHandler)
+	configService := keptn.NewConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, resourceHandler)
 
 	err := file.MountFiles(env.Action, env.Task, fs, configService)
 	if err != nil {

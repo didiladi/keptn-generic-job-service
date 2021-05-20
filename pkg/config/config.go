@@ -7,17 +7,17 @@ import (
 )
 
 type Config struct {
-	Actions       []Action      `yaml:"actions"`
+	Actions []Action `yaml:"actions"`
 }
 
 type Action struct {
 	Name     string   `yaml:"name"`
 	Event    string   `yaml:"event"`
-	JsonPath JsonPath `yaml:"jsonpath"`
+	JSONPath JSONPath `yaml:"jsonpath"`
 	Tasks    []Task   `yaml:"tasks"`
 }
 
-type JsonPath struct {
+type JSONPath struct {
 	Property string `yaml:"property"`
 	Match    string `yaml:"match"`
 }
@@ -44,12 +44,12 @@ func (c *Config) IsEventMatch(event string, jsonEventData interface{}) (bool, *A
 		// does the event type match?
 		if action.Event == event {
 
-			value, err := jsonpath.Get(action.JsonPath.Property, jsonEventData)
+			value, err := jsonpath.Get(action.JSONPath.Property, jsonEventData)
 			if err != nil {
 				continue
 			}
 
-			if value == action.JsonPath.Match {
+			if value == action.JSONPath.Match {
 				return true, &action
 			}
 		}

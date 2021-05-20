@@ -82,7 +82,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 
 		jobName := "keptn-generic-job-" + event + "-" + strconv.Itoa(index+1)
 
-		clientset, err := k8s.ConnectToCluster(eh.JobNamespace)
+		clientset, err := k8s.ConnectToCluster()
 		if err != nil {
 			log.Printf("Error while connecting to cluster: %s\n", err.Error())
 			sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, "")
