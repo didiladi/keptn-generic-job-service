@@ -15,7 +15,7 @@ import (
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
 	// https://github.com/keptn/keptn/issues/2707
-	resource, err := configService.GetKeptnResource(url.QueryEscape("generic-job/config.yaml"))
+	resource, err := configService.GetKeptnResource(url.QueryEscape("job/config.yaml"))
 	if err != nil {
 		log.Printf("Could not find config for job-executor-service")
 		return err

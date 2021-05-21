@@ -21,7 +21,7 @@ The job-executor-service aims to tackle several current pain points with the cur
 
 ## How?
 
-Just put a file into the keptn git repository (in folder `<service>/generic-job/config.yaml`) to specify 
+Just put a file into the keptn git repository (in folder `<service>/job/config.yaml`) to specify 
 * the containers which should be run as Kubernetes Jobs and
 * the events for which they should be triggered.
 
@@ -43,7 +43,7 @@ actions:
 
 ### Event Matching
 
-The configuration located in `<service>/generic-job/config.yaml` contains the following section:
+The configuration located in `<service>/job/config.yaml` contains the following section:
 
 ```
     jsonpath:

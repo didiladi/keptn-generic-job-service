@@ -41,7 +41,7 @@ func (eh *EventHandler) HandleEvent() error {
 	log.Printf("Attempting to handle event %s of type %s ...", eh.Event.Context.GetID(), eh.Event.Type())
 	log.Printf("CloudEvent %T: %v", eventDataAsInterface, eventDataAsInterface)
 
-	resource, err := eh.Keptn.GetKeptnResource("generic-job/config.yaml")
+	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
 	if err != nil {
 		log.Printf("Could not find config for job-executor-service: %s", err.Error())
 		return err
