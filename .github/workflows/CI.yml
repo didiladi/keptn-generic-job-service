@@ -160,7 +160,6 @@ jobs:
           VERSION: ${{ env.VERSION }}
           IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
           DATETIME: ${{ env.DATETIME }}
-          FILE: ${{ env.DOCKERFILE_SERVICE }}
 
       - id: docker_build_initcontainer
         name: Docker Build InitContainer
