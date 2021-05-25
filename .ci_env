@@ -1,2 +1,5 @@
 DOCKER_ORGANIZATION="didiladi"
 IMAGE="job-executor-service"
+IMAGE_INITCONTAINER="job-executor-service-initcontainer"
+DOCKERFILE_SERVICE="Dockerfile"
+DOCKERFILE_INITCONTAINER="initcontainer.Dockerfile"
