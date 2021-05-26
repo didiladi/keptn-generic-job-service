@@ -69,7 +69,8 @@ func TestPrepareJobEnv(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	jobEnv := prepareJobEnv(task, &eventData, eventAsInterface)
+	err, jobEnv := prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.NilError(t, err)
 
 	assert.Equal(t, jobEnv[0].Name, "HOST")
 	assert.Equal(t, jobEnv[0].Value, "https://keptn.sh")
@@ -88,4 +89,27 @@ func TestPrepareJobEnv(t *testing.T) {
 
 	assert.Equal(t, jobEnv[5].Name, "KEPTN_SERVICE")
 	assert.Equal(t, jobEnv[5].Value, "carts")
+}
+
+func TestPrepareJobEnvWithWrongJSONPath(t *testing.T) {
+	task := config.Task{
+		Env: []config.Env{
+			{
+				Name:  "DEPLOYMENT_STRATEGY",
+				Value: "$.data.deployment.undeploymentstrategy",
+			},
+		},
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	err, _ := prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.ErrorContains(t, err, "unknown key undeploymentstrategy")
 }

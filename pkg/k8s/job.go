@@ -5,7 +5,6 @@ import (
 	"didiladi/job-executor-service/pkg/config"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
-	"log"
 	"strings"
 	"time"
 
@@ -42,6 +41,11 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 	runAsNonRoot := true
 	convert := func(s int64) *int64 {
 		return &s
+	}
+
+	err, jobEnv := prepareJobEnv(task, eventData, jsonEventData)
+	if err != nil {
+		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
 	jobSpec := &batchv1.Job{
@@ -112,7 +116,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 									MountPath: jobVolumeMountPath,
 								},
 							},
-							Env: prepareJobEnv(task, eventData, jsonEventData),
+							Env: jobEnv,
 						},
 					},
 					RestartPolicy: v1.RestartPolicyNever,
@@ -181,14 +185,13 @@ func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
 
-func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) []v1.EnvVar {
+func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) (error, []v1.EnvVar) {
 
 	var jobEnv []v1.EnvVar
 	for _, env := range task.Env {
 		value, err := jsonpath.Get(env.Value, jsonEventData)
 		if err != nil {
-			log.Printf("Could not add env with name %v, value %v, skipping: %v", env.Name, env.Value, err)
-			continue
+			return fmt.Errorf("Could not add env with name %v, value %v: %v", env.Name, env.Value, err), nil
 		}
 
 		jobEnv = append(jobEnv, v1.EnvVar{
@@ -212,5 +215,5 @@ func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData
 		},
 	)
 
-	return jobEnv
+	return nil, jobEnv
 }
