@@ -4,6 +4,8 @@ import (
 	"context"
 	"didiladi/job-executor-service/pkg/config"
 	"fmt"
+	"github.com/PaesslerAG/jsonpath"
+	"log"
 	"strings"
 	"time"
 
@@ -17,7 +19,7 @@ import (
 )
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -110,20 +112,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 									MountPath: jobVolumeMountPath,
 								},
 							},
-							Env: []v1.EnvVar{
-								{
-									Name:  "KEPTN_PROJECT",
-									Value: eventData.Project,
-								},
-								{
-									Name:  "KEPTN_STAGE",
-									Value: eventData.Stage,
-								},
-								{
-									Name:  "KEPTN_SERVICE",
-									Value: eventData.Service,
-								},
-							},
+							Env: prepareJobEnv(task, eventData, jsonEventData),
 						},
 					},
 					RestartPolicy: v1.RestartPolicyNever,
@@ -190,4 +179,38 @@ func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 
 	jobs := clientset.BatchV1().Jobs(namespace)
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
+}
+
+func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) []v1.EnvVar {
+
+	var jobEnv []v1.EnvVar
+	for _, env := range task.Env {
+		value, err := jsonpath.Get(env.Value, jsonEventData)
+		if err != nil {
+			log.Printf("Could not add env with name %v, value %v, skipping: %v", env.Name, env.Value, err)
+			continue
+		}
+
+		jobEnv = append(jobEnv, v1.EnvVar{
+			Name:  env.Name,
+			Value: fmt.Sprintf("%v", value),
+		})
+	}
+
+	jobEnv = append(jobEnv,
+		v1.EnvVar{
+			Name:  "KEPTN_PROJECT",
+			Value: eventData.Project,
+		},
+		v1.EnvVar{
+			Name:  "KEPTN_STAGE",
+			Value: eventData.Stage,
+		},
+		v1.EnvVar{
+			Name:  "KEPTN_SERVICE",
+			Value: eventData.Service,
+		},
+	)
+
+	return jobEnv
 }
