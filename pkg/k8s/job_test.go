@@ -69,7 +69,7 @@ func TestPrepareJobEnv(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	err, jobEnv := prepareJobEnv(task, &eventData, eventAsInterface)
+	jobEnv, err := prepareJobEnv(task, &eventData, eventAsInterface)
 	assert.NilError(t, err)
 
 	assert.Equal(t, jobEnv[0].Name, "HOST")
@@ -110,6 +110,6 @@ func TestPrepareJobEnvWithWrongJSONPath(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	err, _ := prepareJobEnv(task, &eventData, eventAsInterface)
+	_, err := prepareJobEnv(task, &eventData, eventAsInterface)
 	assert.ErrorContains(t, err, "unknown key undeploymentstrategy")
 }

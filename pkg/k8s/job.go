@@ -43,7 +43,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		return &s
 	}
 
-	err, jobEnv := prepareJobEnv(task, eventData, jsonEventData)
+	jobEnv, err := prepareJobEnv(task, eventData, jsonEventData)
 	if err != nil {
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
@@ -185,13 +185,13 @@ func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
 
-func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) (error, []v1.EnvVar) {
+func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
 	for _, env := range task.Env {
 		value, err := jsonpath.Get(env.Value, jsonEventData)
 		if err != nil {
-			return fmt.Errorf("could not add env with name %v, value %v: %v", env.Name, env.Value, err), nil
+			return nil, fmt.Errorf("could not add env with name %v, value %v: %v", env.Name, env.Value, err)
 		}
 
 		jobEnv = append(jobEnv, v1.EnvVar{
@@ -215,5 +215,5 @@ func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData
 		},
 	)
 
-	return nil, jobEnv
+	return jobEnv, nil
 }
