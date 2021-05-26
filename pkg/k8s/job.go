@@ -191,7 +191,7 @@ func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData
 	for _, env := range task.Env {
 		value, err := jsonpath.Get(env.Value, jsonEventData)
 		if err != nil {
-			return fmt.Errorf("Could not add env with name %v, value %v: %v", env.Name, env.Value, err), nil
+			return fmt.Errorf("could not add env with name %v, value %v: %v", env.Name, env.Value, err), nil
 		}
 
 		jobEnv = append(jobEnv, v1.EnvVar{
