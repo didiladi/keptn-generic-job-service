@@ -21,12 +21,10 @@ require (
 	github.com/keptn/go-utils v0.8.4
 	github.com/keptn/kubernetes-utils v0.8.2
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/spf13/afero v1.6.0
+	github.com/spf13/afero v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
-	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools v2.2.0+incompatible
